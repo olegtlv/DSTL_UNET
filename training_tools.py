@@ -7,12 +7,15 @@ import torchvision.models as models
 
 
 class DiceLoss(nn.Module):
-    def __init__(self, smooth=1):
+    def __init__(self, smooth=1, logits=False):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
+        self.logits = logits
 
     def forward(self, inputs, targets):
-        smooth = 1.0  # Smoothing factor to prevent division by zero
+        if self.logits:
+            inputs = torch.sigmoid(inputs)
+
         intersection = torch.sum(inputs * targets)
         union = torch.sum(inputs) + torch.sum(targets)
         dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
@@ -22,8 +25,8 @@ class DiceLoss(nn.Module):
 class CombinedLoss(nn.Module):
     def __init__(self, gamma=0.85, weight_dice=0.25):
         super(CombinedLoss, self).__init__()
-        self.criterion_BCE = nn.BCELoss()
-        self.criterion_Dice = DiceLoss()
+        self.criterion_BCE = nn.BCEWithLogitsLoss()  # ✅ safer for AMP
+        self.criterion_Dice = DiceLoss(logits=True)  # ✅ we'll fix this below
         self.gamma = gamma
         self.weight_dice = weight_dice
 

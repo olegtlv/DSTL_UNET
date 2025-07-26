@@ -8,12 +8,12 @@ device = 'cuda'
 data_transform_image = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    transforms.Lambda(lambda x: x.float().to(device)),
+    transforms.Lambda(lambda x: x.float()),
 ])
 
 data_transform_label = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Lambda(lambda x: x.float().to(device) * 255),
+    transforms.Lambda(lambda x: x.float() * 255),
 
 ])
 

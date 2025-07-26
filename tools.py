@@ -150,7 +150,7 @@ import numpy as np
 def show_one_image_with_pred(inputs, outputs, targets, img_num=0, return_img=False):
     # Convert tensors to numpy arrays
     input_img = inputs[img_num].permute(1, 2, 0).cpu().numpy()  # [H, W, C]
-    pred_mask = outputs[img_num].squeeze().cpu().detach().numpy()  # [H, W]
+    pred_mask = torch.sigmoid(outputs[img_num]).squeeze().cpu().numpy()  # [H, W]
     target_mask = targets[img_num].squeeze().cpu().detach().numpy()  # [H, W]
 
     # De-normalize input image if in [-1, 1]

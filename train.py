@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import wandb
+device = 'cuda'
+from torch.cuda.amp import GradScaler
+from torch.amp import autocast
 
 from tools import show_one_image_with_pred
 from training_tools import DiceLoss
@@ -9,24 +12,30 @@ from training_tools import DiceLoss
 # Define loss function and optimizer
 criterion_BCE = nn.BCELoss()
 criterion_Dice = DiceLoss()
+scaler = GradScaler()
 
 
-
-
-def train_one_epoch(model, dataloader, optimizer, combined_loss, epoch, train_loss_hist_batch, optimizer_hist_batch):
+def train_one_epoch(model, dataloader, optimizer, combined_loss, epoch, train_loss_hist_batch, optimizer_hist_batch, scaler):
     model.train()
     total_loss = 0
     num_batches = 0
     batch_num = 0
 
     for batch in dataloader:
-        inputs, targets = batch['image'], batch['mask']
-        outputs, _, _ = model(inputs)
-        loss_comb = combined_loss(outputs, targets, epoch)
+        inputs = batch['image'].to('cuda')
+        targets = batch['mask'].to('cuda')
 
         optimizer.zero_grad()
-        loss_comb.backward()
-        optimizer.step()
+
+        with autocast(device_type='cuda'):
+            outputs = model(inputs)
+            if isinstance(outputs, tuple):  # if model returns extra outputs
+                outputs = outputs[0]
+            loss_comb = combined_loss(outputs, targets, epoch)
+
+        scaler.scale(loss_comb).backward()         # ✅ Backward pass
+        scaler.step(optimizer)                     # ✅ Optimizer step
+        scaler.update()                            # ✅ Update the scale
 
         train_loss_hist_batch.append(loss_comb.item())
         optimizer_hist_batch.append(optimizer.param_groups[0]['lr'])
@@ -36,12 +45,11 @@ def train_one_epoch(model, dataloader, optimizer, combined_loss, epoch, train_lo
             print("    batch loss: %.4f" % float(loss_comb))
             print('    LR ENC: ', optimizer.param_groups[0]['lr'],
                   '    LR_DEC: ', optimizer.param_groups[6]['lr'])
-        batch_num += 1
 
         total_loss += loss_comb.item()
+        batch_num += 1
         num_batches += 1
 
-        # Log batch-level loss and LR
         wandb.log({
             "train/batch_loss": loss_comb.item(),
             "train/lr_encoder": optimizer.param_groups[0]['lr'],
@@ -66,8 +74,9 @@ def calc_validation_loss_one_epoch(model, dataloader, combined_loss, epoch):
     with torch.no_grad():
         for batch in dataloader:
             num_batches_test += 1
-            inputs_test, targets_test = batch['image'], batch['mask']
-            outputs_test, _, _ = model(inputs_test)
+            inputs_test, targets_test = batch['image'].to(device), batch['mask'].to(device)
+            # outputs_test, _, _ = model(inputs_test)
+            outputs_test = model(inputs_test)
             loss_test = combined_loss(outputs_test, targets_test, epoch)
             total_loss_test += loss_test.item()
 

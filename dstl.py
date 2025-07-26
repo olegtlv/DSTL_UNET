@@ -13,17 +13,20 @@ import pandas as pd
 import IPython.display as display
 import plotly
 import wandb
-
+from tqdm import tqdm
 import random
 import itertools
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchview import draw_graph
+from torch.cuda.amp import GradScaler
+
+scaler = GradScaler()
 
 df = pd.read_csv(R"C:\data\dstl-satellite-imagery-feature-detection\train_wkt_v4.csv.zip")
 sizes = pd.read_csv(r"C:\data\dstl-satellite-imagery-feature-detection\grid_sizes.csv.zip")
 sizes = sizes.set_index('Unnamed: 0')
-viz_one_plotly(df)
+# viz_one_plotly(df)
 
 for c in df.ClassType.unique():
     print('class:', c)
@@ -46,7 +49,7 @@ images = []
 labels = []
 geos = []
 
-for ii, ID in enumerate(ids):
+for ii, ID in tqdm(enumerate(ids)):
     print('image: ', ID)
     if ii < 1:
         continue
@@ -63,7 +66,7 @@ sub_image_size = (224, 224)
 overlap_ratio = 0.5
 N_test = 50
 device = 'cuda'
-batch_size = 75
+batch_size = 48
 
 random.seed(2)
 images_test = random.sample(list(df.ImageId.unique()),2)
@@ -132,6 +135,9 @@ pretrained = True
 model_orig = UNet_effnet(num_classes)
 # model_orig = UNet_orig(num_classes)
 model_orig.to(device)
+# model_orig = torch.compile(model_orig)
+# model_orig = model_orig.to(memory_format=torch.channels_last)
+
 
 # model_graph = draw_graph(model_orig, input_size=(1,3,224,224), expand_nested=True, depth=3)
 # model_graph.visual_graph
@@ -182,7 +188,7 @@ wandb.init(
 for epoch in range(num_epochs):
     # Train one epoch
     epoch_loss = train_one_epoch(model_orig, dataloader_train, optimizer, combined_loss, epoch, train_loss_hist_batch,
-                                 optimizer_hist_batch)
+                                 optimizer_hist_batch, scaler)
     print()
     print("EPOCH #", epoch)
     print("        ", " TRAIN LOSS BCE : %.4f" % float(epoch_loss))

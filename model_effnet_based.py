@@ -38,8 +38,8 @@ class DecoderBlock(nn.Module):
 
 class UNet_effnet(nn.Module):
     def __init__(self, num_classes, pretrained=True,
-                 input_features=3, layer1_features=16, layer2_features=18, layer3_features=20,
-                 layer4_features=22, layer5_features=24):
+                 input_features=3, layer1_features=32, layer2_features=16,
+                layer3_features=24, layer4_features=40, layer5_features=80):
         super(UNet_effnet, self).__init__()
         self.effnet = models.efficientnet_b0(pretrained=pretrained)
 
