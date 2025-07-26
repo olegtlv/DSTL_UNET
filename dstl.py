@@ -3,7 +3,8 @@ import cv2
 import matplotlib
 from train import calc_validation_loss_one_epoch, train_one_epoch
 from tools import viz_one, get_one_RGBImage_n_label, get_scalers, mask_for_polygons, viz_one_plotly
-from model_u_orig import UNet
+from model_u_orig import UNet_orig
+from model_effnet_based import UNet_effnet
 from dataset import RGBChunkedDataset
 from training_tools import CombinedLoss
 matplotlib.use('Qt5Agg')
@@ -34,11 +35,11 @@ for c in df.ClassType.unique():
 ids = df.ImageId.unique()
 masks = []
 images = []
-# pickClass = 5 # vegetation
+pickClass = 5 # vegetation
 # pickClass = 6 # crops
 # pickClass = 2 # structures
 # pickClass = 1 # buildins
-pickClass = 4  # track
+# pickClass = 4  # track
 zip_file_path = r"C:\data\dstl-satellite-imagery-feature-detection\three_band.zip"
 
 images = []
@@ -128,7 +129,8 @@ dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
 # Instantiate the model
 num_classes = 1  # Binary segmentation
 pretrained = True
-model_orig = UNet(num_classes)
+model_orig = UNet_effnet(num_classes)
+# model_orig = UNet_orig(num_classes)
 model_orig.to(device)
 
 # model_graph = draw_graph(model_orig, input_size=(1,3,224,224), expand_nested=True, depth=3)
@@ -163,7 +165,7 @@ optimizer_hist_batch = []
 
 # define WnB:
 wandb.init(
-    project="your-project-name",  # e.g., "segmentation-unet"
+    project="DSTL-veg",  # e.g., "segmentation-unet"
     name=f"run_{model_orig.__class__.__name__}",  # run name
     config={
         "epochs": num_epochs,

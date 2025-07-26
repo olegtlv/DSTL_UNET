@@ -102,11 +102,11 @@ class FinalLayer(nn.Module):
         return self.layers(inputs)
 
 
-class UNet(nn.Module):
+class UNet_orig(nn.Module):
     def __init__(self, num_classes, input_features=3,
                  layer1_features=16, layer2_features=18, layer3_features=20,
                  layer4_features=22, layer5_features=24):
-        super(UNet, self).__init__()
+        super(UNet_orig, self).__init__()
 
         self.num_classes = num_classes
 

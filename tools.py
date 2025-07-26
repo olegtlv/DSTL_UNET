@@ -58,14 +58,6 @@ def get_scalers(W,H,x_max,y_min):
 
 
 pio.renderers.default = "browser"  # Open plot in a new browser window
-# import plotly.graph_objects as go
-# import plotly.io as pio
-# from shapely import wkt
-# from shapely.geometry import MultiPolygon, Polygon as ShapelyPolygon
-# import matplotlib.pyplot as plt  # for colormap
-# import numpy as np
-
-pio.renderers.default = "browser"  # Open in new browser window
 
 def mpl_to_plotly_rgba(color, alpha=0.3):
     """Convert matplotlib RGBA to Plotly-compatible rgba string."""
